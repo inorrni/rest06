@@ -1,2 +1,11 @@
 # obsidian (vault settings — local only, not for deploy repo)
 .obsidian/
+
+# dependencies / build
+node_modules/
+dist/
+
+# local env (Supabase / Kakao keys)
+.env
+.env.local
+.env.*.local

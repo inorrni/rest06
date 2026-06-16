@@ -145,10 +145,14 @@ export function useRoadEngine(lang) {
       const bx = x - busW / 2
       const by = vh * BUS_ANCHOR - busH / 2
       bus.style.transform = `translate(${bx}px, ${by}px) rotate(${angle}deg)`
-      // 시작부 페이드인 + 도로 끝(푸터 윗선) 도달 시 페이드아웃 → 푸터 위에 버스가 겹치지 않게
+      // 시작부 페이드인 + (푸터가 화면상 버스에 닿을 때만) 페이드아웃.
+      // 문서 좌표가 아니라 화면 좌표로 판단 → 전체화면처럼 푸터가 짧으면
+      // 맨 끝까지 스크롤해도 버스가 투명해지지 않는다.
       const fadeIn = Math.min(1, window.scrollY / (vh * 0.42))
+      const footerTopScreen = roadEndY - window.scrollY
+      const busBottomScreen = vh * BUS_ANCHOR + busH / 2
       const fadeOut = roadEndY
-        ? Math.min(1, Math.max(0, (roadEndY - docY) / (vh * 0.4)))
+        ? Math.min(1, Math.max(0, (footerTopScreen - busBottomScreen) / (vh * 0.18)))
         : 1
       bus.style.opacity = Math.min(fadeIn, fadeOut).toFixed(3)
       if (ping) ping.style.transform = `translate(${x - 16}px, ${vh * BUS_ANCHOR - 16}px)`

@@ -13,6 +13,7 @@ import HowTo from './components/HowTo'
 import Stats from './components/Stats'
 import Faq from './components/Faq'
 import Footer from './components/Footer'
+import ChatWidget from './components/ChatWidget'
 
 export default function App() {
   const { lang } = useLang()
@@ -36,6 +37,7 @@ export default function App() {
       </main>
 
       <Footer />
+      <ChatWidget />
     </>
   )
 }

@@ -43,15 +43,40 @@ create policy "own rows" on public.favorite_buses
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 ```
 
+## 채팅 도우미 (Edge Function 프록시)
+우하단 팝업 채팅. **카카오 로그인 사용자만** 사용 가능하며, LLM 호출은 Supabase
+**Edge Function**(`supabase/functions/chat`)이 대행한다. Solar/OpenAI 키는 함수의
+secret 에서만 읽으므로 브라우저에 노출되지 않는다. (Solar 우선 → 실패 시 OpenAI 폴백)
+
+```bash
+# Supabase CLI 로그인 & 프로젝트 연결
+supabase login
+supabase link --project-ref <PROJECT_REF>
+
+# 키 저장 (Supabase 에 보관 — 클라이언트로 안 나감)
+supabase secrets set SOLAR_API_KEY=up_xxx OPENAI_API_KEY=sk-xxx
+# (선택) 모델 변경
+supabase secrets set SOLAR_MODEL=solar-pro2 OPENAI_MODEL=gpt-4o-mini
+
+# 함수 배포
+supabase functions deploy chat
+```
+
+- 인증: Edge Function 이 요청의 access token 으로 `auth.getUser()` 를 검증 → 로그인
+  사용자가 아니면 401. supabase-js `functions.invoke` 가 토큰을 자동 첨부한다.
+- Solar 는 OpenAI 호환 엔드포인트(`https://api.upstage.ai/v1/chat/completions`)를 사용.
+  모델명이 바뀌면 코드 수정 없이 `SOLAR_MODEL` secret 만 변경하면 된다.
+
 ## 구조
 ```
 src/
   main.jsx · App.jsx
   context/LanguageContext.jsx   ← KO/EN i18n
   data/content.js               ← 모든 카피 + 데모 데이터
-  lib/                          ← supabase, auth(카카오), favorites
+  lib/                          ← supabase, auth(카카오), favorites, chat
   hooks/                        ← useAuth, useReveal, useRoadEngine, useLiveMap
-  components/                   ← Header, LineNav, RoadLayer, Hero, LiveMap, About, …
+  components/                   ← Header, LineNav, RoadLayer, Hero, LiveMap, ChatWidget, …
   styles/index.css
+supabase/functions/chat/        ← LLM 프록시 Edge Function (Solar + OpenAI)
 docs/                           ← 개발일지 · 평가보고서
 ```

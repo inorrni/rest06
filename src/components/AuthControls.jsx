@@ -70,9 +70,16 @@ export default function AuthControls() {
   if (!user) {
     return (
       <>
-        <button className="btn btn-kakao" onClick={handleLogin} disabled={busy}>
+        <button
+          className="btn btn-kakao"
+          onClick={handleLogin}
+          disabled={busy}
+          aria-label={t('카카오 로그인', 'Kakao login')}
+        >
           <IconKakao />
-          {busy ? t('연결 중…', 'Connecting…') : t('카카오 로그인', 'Kakao login')}
+          <span className="btn-label">
+            {busy ? t('연결 중…', 'Connecting…') : t('카카오 로그인', 'Kakao login')}
+          </span>
         </button>
         {error && (
           <div className="auth-error" role="alert">

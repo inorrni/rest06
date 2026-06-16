@@ -27,10 +27,10 @@ export default function Hero() {
             {t('자율주행버스란?', 'What is it?')}
           </a>
         </div>
-        <div className="hero-scroll">
-          <div className="mouse" />
-          <span>{t('스크롤하면 버스가 정류장을 따라 움직여요', 'Scroll — the bus follows the stops')}</span>
-        </div>
+      </div>
+      <div className="hero-scroll">
+        <div className="mouse" />
+        <span>{t('스크롤하면 버스가 정류장을 따라 움직여요', 'Scroll — the bus follows the stops')}</span>
       </div>
     </section>
   )

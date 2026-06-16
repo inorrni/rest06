@@ -25,6 +25,7 @@ export function useRoadEngine(lang) {
 
     const BUS_ANCHOR = 0.46
     let vw = 0, vh = 0, docH = 0
+    let roadEndY = 0
     let samples = []
     let stops = []
     let busW = 64, busH = 120
@@ -32,7 +33,9 @@ export function useRoadEngine(lang) {
     let ticking = false
 
     function laneX(side) {
-      const amp = Math.min(0.24, 280 / vw)
+      // 차선을 화면 바깥쪽으로 더 밀어, 넓은 카드(#live 880px) 뒤로
+      // 정류장 배지·버스가 가려지지 않게 한다. (좁은 화면은 자동 축소)
+      const amp = Math.min(0.34, 460 / vw)
       const c = 0.5
       if (side === 'left') return vw * (c - amp)
       if (side === 'right') return vw * (c + amp)
@@ -42,7 +45,15 @@ export function useRoadEngine(lang) {
     function build() {
       vw = window.innerWidth
       vh = window.innerHeight
-      docH = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight)
+
+      // 문서 높이는 '실제 콘텐츠(푸터 바닥)' 기준으로 잰다.
+      // scrollHeight를 쓰면 absolute 인 도로 SVG·정류장 레이어(height:docH)가
+      // 스크롤 높이에 포함돼, 콘텐츠가 줄어도 높이가 고정(latch)되며
+      // 푸터 아래에 빈 공간이 생긴다.
+      const footerEl = document.querySelector('.site-footer')
+      docH = footerEl
+        ? Math.round(footerEl.getBoundingClientRect().bottom + window.scrollY)
+        : Math.max(document.body.scrollHeight, document.documentElement.scrollHeight)
 
       busW = bus.offsetWidth || 64
       busH = bus.offsetHeight || 120
@@ -56,10 +67,17 @@ export function useRoadEngine(lang) {
       })
       if (!wps.length) return
 
+      // 도로는 마지막 섹션 다음에 푸터 윗선에서 끝낸다.
+      // (docH까지 그리면 푸터를 관통해 화면 바닥까지 길게 이어진다)
+      const endY = footerEl
+        ? footerEl.getBoundingClientRect().top + window.scrollY
+        : docH
+      roadEndY = endY
+
       const pts = [
         { x: wps[0].x, y: 0 },
         ...wps,
-        { x: wps[wps.length - 1].x, y: docH },
+        { x: wps[wps.length - 1].x, y: endY },
       ]
 
       let d = `M ${pts[0].x.toFixed(1)} ${pts[0].y.toFixed(1)}`
@@ -127,8 +145,13 @@ export function useRoadEngine(lang) {
       const bx = x - busW / 2
       const by = vh * BUS_ANCHOR - busH / 2
       bus.style.transform = `translate(${bx}px, ${by}px) rotate(${angle}deg)`
-      bus.style.opacity = Math.min(1, window.scrollY / (vh * 0.42)).toFixed(3)
-      if (ping) ping.style.transform = `translate(${x - 32}px, ${vh * BUS_ANCHOR - 32}px)`
+      // 시작부 페이드인 + 도로 끝(푸터 윗선) 도달 시 페이드아웃 → 푸터 위에 버스가 겹치지 않게
+      const fadeIn = Math.min(1, window.scrollY / (vh * 0.42))
+      const fadeOut = roadEndY
+        ? Math.min(1, Math.max(0, (roadEndY - docY) / (vh * 0.4)))
+        : 1
+      bus.style.opacity = Math.min(fadeIn, fadeOut).toFixed(3)
+      if (ping) ping.style.transform = `translate(${x - 16}px, ${vh * BUS_ANCHOR - 16}px)`
 
       let nearest = -1, best = 1e9
       for (let i = 0; i < stops.length; i++) {
